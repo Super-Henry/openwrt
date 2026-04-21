@@ -21,12 +21,9 @@ PKG_SOURCE:=openssl-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
 	http://www.openssl.org/source/ \
 	http://www.openssl.org/source/old/$(PKG_BASE)/ \
-	http://ftp.fi.muni.cz/pub/openssl/source/ \
-	http://ftp.fi.muni.cz/pub/openssl/source/old/$(PKG_BASE)/ \
-	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/ \
-	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/old/$(PKG_BASE)/
+	https://openssl-library.org/source/old/$(PKG_BASE)/
 
-PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
+PKG_HASH:=cf3098950ce4d71e6fe89f07d203d12b01be5a40c330aaf40b3bcc90e205c9b7
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE
