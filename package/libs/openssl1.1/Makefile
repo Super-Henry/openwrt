@@ -16,9 +16,11 @@ PKG_BUILD_PARALLEL:=1
 
 PKG_SOURCE:=openssl-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
-	http://www.openssl.org/source/ \
-	http://www.openssl.org/source/old/$(PKG_BASE)/ \
-	https://openssl-library.org/source/old/$(PKG_BASE)/
+	https://www.openssl.org/source/ \
+	https://www.openssl.org/source/old/$(PKG_BASE)/ \
+	https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/ \
+	https://mirrors.tuna.tsinghua.edu.cn/openssl/source/old/$(PKG_BASE)/ \
+	https://ftp.openssl.org/source/old/$(PKG_BASE)/
 
 PKG_HASH:=d6697e2871e77238460402e9362d47d18382b15ef9f246aba6c7bd780d38a6b0
 
