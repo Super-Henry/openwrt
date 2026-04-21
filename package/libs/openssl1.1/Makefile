@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl1.1
 PKG_BASE:=1.1.1
-PKG_BUGFIX:=w
+PKG_BUGFIX:=v
 PKG_VERSION:=$(PKG_BASE)$(PKG_BUGFIX)
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
@@ -20,7 +20,7 @@ PKG_SOURCE_URL:= \
 	http://www.openssl.org/source/old/$(PKG_BASE)/ \
 	https://openssl-library.org/source/old/$(PKG_BASE)/
 
-PKG_HASH:=cf3098950ce4d71e6fe89f07d203d12b01be5a40c330aaf40b3bcc90e205c9b7
+PKG_HASH:=d6697e2871e77238460402e9362d47d18382b15ef9f246aba6c7bd780d38a6b0
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE
