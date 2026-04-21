@@ -38,7 +38,7 @@ define Package/libopenssl1.1
 endef
 
 define Package/libopenssl1.1/description
-OpenSSL 1.1 shared libraries, installed to /usr/lib/openssl-1.1
+OpenSSL 1.1 shared libraries, installed to /usr/lib
 endef
 
 # 配置选项（保持原样，但无引擎依赖）
@@ -54,7 +54,7 @@ define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
-			--libdir=lib/openssl-1.1 \
+			--libdir=lib \
 			--openssldir=/etc/ssl-1.1 \
 			--cross-compile-prefix="$(TARGET_CROSS)" \
 			$(TARGET_CFLAGS) \
@@ -78,16 +78,23 @@ define Build/Compile
 endef
 
 define Build/InstallDev
+	# 头文件放在单独目录，避免覆盖 OpenSSL 3
 	$(INSTALL_DIR) $(1)/usr/include/openssl1.1
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(1)/usr/include/openssl1.1/
-	$(INSTALL_DIR) $(1)/usr/lib/openssl-1.1
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} $(1)/usr/lib/openssl-1.1/
+	# 静态库和动态库放 /usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.a $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.a $(1)/usr/lib/
+	# 动态库只安装 1.1 版本
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 endef
 
 define Package/libopenssl1.1/install
-	$(INSTALL_DIR) $(1)/usr/lib/openssl-1.1
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.* $(1)/usr/lib/openssl-1.1/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.* $(1)/usr/lib/openssl-1.1/
+	$(INSTALL_DIR) $(1)/usr/lib
+	# 只安装带版本号的动态库，避免覆盖 OpenSSL 3
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libopenssl1.1))
