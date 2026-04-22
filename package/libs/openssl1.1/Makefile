@@ -16,10 +16,13 @@ PKG_BUILD_PARALLEL:=1
 
 PKG_SOURCE:=openssl-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
-				https://openssl-library.org/source/old/$(PKG_BASE)/ \
-				https://openssl-library.org/source/old/$(PKG_BASE)/
+	https://openssl-library.org/source/old/$(PKG_BASE)/ \
+	https://www.openssl.org/source/old/$(PKG_BASE)/
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
+
+# 强制解压后的目录名为 openssl1.1-1.1.1w
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE
