@@ -21,7 +21,7 @@ PKG_SOURCE_URL:= \
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
-# 强制使用正确的源码目录（覆盖默认的 openssl1.1-1.1.1w）
+# 强制使用正确的源码目录（覆盖默认的 openssl-1.1.1w）
 PKG_BUILD_DIR:=$(BUILD_DIR)/openssl-$(PKG_VERSION)
 
 PKG_LICENSE:=OpenSSL
