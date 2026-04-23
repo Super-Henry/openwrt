@@ -21,8 +21,8 @@ PKG_SOURCE_URL:= \
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
-# 强制解压后的目录名为 openssl1.1-1.1.1w
-#PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+# 强制使用正确的源码目录（覆盖默认的 openssl1.1-1.1.1w）
+PKG_BUILD_DIR:=$(BUILD_DIR)/openssl-$(PKG_VERSION)
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE
@@ -52,8 +52,8 @@ endif
 OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
 
 # ===== 处理两级目录嵌套 =====
-# 真正的源码目录
-OPENSSL_SRC_DIR:=$(PKG_BUILD_DIR)/openssl-$(PKG_VERSION)
+# PKG_BUILD_DIR 已经指向 openssl-1.1.1w，这里定义二级目录的检测起点
+OPENSSL_SRC_DIR:=$(PKG_BUILD_DIR)
 
 define Build/Configure
 	# 处理两级目录嵌套的情况
