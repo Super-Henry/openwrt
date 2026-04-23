@@ -16,8 +16,8 @@ PKG_BUILD_PARALLEL:=1
 
 PKG_SOURCE:=openssl-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
-	https://openssl-library.org/source/old/$(PKG_BASE)/ \
-	https://www.openssl.org/source/old/$(PKG_BASE)/
+        https://openssl-library.org/source/old/$(PKG_BASE)/ \
+        https://www.openssl.org/source/old/$(PKG_BASE)/
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
@@ -49,8 +49,10 @@ ifndef CONFIG_OPENSSL_WITH_ASM
   OPENSSL_OPTIONS += no-asm
 endif
 
-# ===== 正确 target（鲁班/哪吒适配）=====
+# ===== 正确 target（鲁班 mipsel / 哪吒 aarch64 适配）=====
 ifeq ($(ARCH),mips)
+  OPENSSL_TARGET:=linux-mips32
+else ifeq ($(ARCH),mipsel)
   OPENSSL_TARGET:=linux-mips32
 else ifeq ($(ARCH),aarch64)
   OPENSSL_TARGET:=linux-aarch64
@@ -68,60 +70,60 @@ TARGET_LDFLAGS += -Wl,--gc-sections
 
 # ===== ✅ 关键修复：隔离 OpenWrt 环境 =====
 define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
-	unset CROSS_COMPILE; \
-	unset CFLAGS; \
-	unset CPPFLAGS; \
-	unset LDFLAGS; \
-	./Configure $(OPENSSL_TARGET) \
-		--prefix=/usr \
-		--openssldir=/etc/ssl-1.1 \
-		--libdir=lib \
-		--cross-compile-prefix="$(TARGET_CROSS)" \
-		$(OPENSSL_OPTIONS) \
-	)
+        (cd $(PKG_BUILD_DIR); \
+        unset CROSS_COMPILE; \
+        unset CFLAGS; \
+        unset CPPFLAGS; \
+        unset LDFLAGS; \
+        ./Configure $(OPENSSL_TARGET) \
+                --prefix=/usr \
+                --openssldir=/etc/ssl-1.1 \
+                --libdir=lib \
+                --cross-compile-prefix="$(TARGET_CROSS)" \
+                $(OPENSSL_OPTIONS) \
+        )
 endef
 
 # ===== Compile（仅补齐工具链，防止隐性问题）=====
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" \
-		AR="$(TARGET_AR)" \
-		RANLIB="$(TARGET_RANLIB)" \
-		$(PKG_JOBS)
+        $(MAKE) -C $(PKG_BUILD_DIR) \
+                CC="$(TARGET_CC)" \
+                AR="$(TARGET_AR)" \
+                RANLIB="$(TARGET_RANLIB)" \
+                $(PKG_JOBS)
 
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install_sw install_ssldirs
+        $(MAKE) -C $(PKG_BUILD_DIR) \
+                DESTDIR="$(PKG_INSTALL_DIR)" \
+                install_sw install_ssldirs
 endef
 
 # ===== 开发文件（避免污染 OpenSSL 3）=====
 define Build/InstallDev
-	# 头文件隔离
-	$(INSTALL_DIR) $(1)/usr/include/openssl1.1
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(1)/usr/include/openssl1.1/
+        # 头文件隔离
+        $(INSTALL_DIR) $(1)/usr/include/openssl1.1
+        $(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(1)/usr/include/openssl1.1/
 
-	# 静态库
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.a $(1)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.a $(1)/usr/lib/
+        # 静态库
+        $(INSTALL_DIR) $(1)/usr/lib
+        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.a $(1)/usr/lib/
+        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.a $(1)/usr/lib/
 
-	# 只放带版本号的动态库
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
+        # 只放带版本号的动态库
+        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
+        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 endef
 
 # ===== 运行时安装（核心）=====
 define Package/libopenssl1.1/install
-	$(INSTALL_DIR) $(1)/usr/lib
+        $(INSTALL_DIR) $(1)/usr/lib
 
-	# ✅ 只安装 1.1（不会覆盖 OpenSSL 3）
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
+        # ✅ 只安装 1.1（不会覆盖 OpenSSL 3）
+        $(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
+        $(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 
-	# 🔥 防止污染系统
-	rm -f $(1)/usr/lib/libcrypto.so
-	rm -f $(1)/usr/lib/libssl.so
+        # 🔥 防止污染系统
+        rm -f $(1)/usr/lib/libcrypto.so
+        rm -f $(1)/usr/lib/libssl.so
 endef
 
 $(eval $(call BuildPackage,libopenssl1.1))
