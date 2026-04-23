@@ -127,9 +127,9 @@ define Package/libopenssl1.1/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 
-        # 防止污染 OpenSSL 3
-        rm -f $(1)/usr/lib/libcrypto.so
-        rm -f $(1)/usr/lib/libssl.so
+	# 防止污染 OpenSSL 3
+	rm -f $(1)/usr/lib/libcrypto.so
+	rm -f $(1)/usr/lib/libssl.so
 endef
 
 $(eval $(call BuildPackage,libopenssl1.1))
