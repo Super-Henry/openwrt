@@ -56,15 +56,11 @@ OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
 OPENSSL_SRC_DIR:=$(PKG_BUILD_DIR)
 
 define Build/Configure
-	# 处理两级目录嵌套的情况
 	@if [ -d "$(OPENSSL_SRC_DIR)/openssl-$(PKG_VERSION)" ]; then \
-		echo "📁 Detected nested directory, entering openssl-$(PKG_VERSION)/openssl-$(PKG_VERSION)"; \
 		cd $(OPENSSL_SRC_DIR)/openssl-$(PKG_VERSION); \
 	elif [ -d "$(OPENSSL_SRC_DIR)" ]; then \
-		echo "📁 Using standard directory openssl-$(PKG_VERSION)"; \
 		cd $(OPENSSL_SRC_DIR); \
 	else \
-		echo "📁 Using PKG_BUILD_DIR"; \
 		cd $(PKG_BUILD_DIR); \
 	fi; \
 	./Configure $(OPENSSL_TARGET) \
