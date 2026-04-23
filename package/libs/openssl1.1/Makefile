@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2006-2016 OpenWrt.org
+# This is free software, licensed under the GNU General Public License v2.
 #
 
 include $(TOPDIR)/rules.mk
@@ -20,6 +21,7 @@ PKG_SOURCE_URL:= \
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
+# 强制使用正确的源码目录（覆盖默认的 openssl-1.1.1w）
 PKG_BUILD_DIR:=$(BUILD_DIR)/openssl-$(PKG_VERSION)
 
 PKG_LICENSE:=OpenSSL
@@ -47,8 +49,7 @@ ifndef CONFIG_OPENSSL_WITH_ASM
   OPENSSL_OPTIONS += no-asm
 endif
 
-# ✅ 正确 target（关键修复）
-# OpenSSL 不支持 linux-mipsel-openwrt 这种写法
+# ===== 正确 target（鲁班/哪吒适配）=====
 ifeq ($(ARCH),mips)
   OPENSSL_TARGET:=linux-mips32
 else ifeq ($(ARCH),aarch64)
@@ -61,13 +62,17 @@ else
   OPENSSL_TARGET:=linux-generic32
 endif
 
-# 不要乱传 flags 给 Configure（这是你之前炸的核心原因）
+# ===== flags（保留你的原逻辑）=====
 TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
-# ===== Configure =====
+# ===== ✅ 关键修复：隔离 OpenWrt 环境 =====
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
+	unset CROSS_COMPILE; \
+	unset CFLAGS; \
+	unset CPPFLAGS; \
+	unset LDFLAGS; \
 	./Configure $(OPENSSL_TARGET) \
 		--prefix=/usr \
 		--openssldir=/etc/ssl-1.1 \
@@ -77,9 +82,14 @@ define Build/Configure
 	)
 endef
 
-# ===== Compile =====
+# ===== Compile（仅补齐工具链，防止隐性问题）=====
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) $(PKG_JOBS)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		AR="$(TARGET_AR)" \
+		RANLIB="$(TARGET_RANLIB)" \
+		$(PKG_JOBS)
+
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install_sw install_ssldirs
