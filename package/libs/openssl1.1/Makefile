@@ -21,7 +21,7 @@ PKG_SOURCE_URL:= \
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
-# 强制使用正确的源码目录（覆盖默认的 openssl-1.1.1w）
+# 强制使用正确的源码目录
 PKG_BUILD_DIR:=$(BUILD_DIR)/openssl-$(PKG_VERSION)
 
 PKG_LICENSE:=OpenSSL
@@ -43,7 +43,7 @@ OpenSSL 1.1 shared libraries for legacy apps (coexists with OpenSSL 3)
 endef
 
 # ===== 构建选项 =====
-OPENSSL_OPTIONS:= shared no-engine no-tests no-async
+OPENSSL_OPTIONS:= shared no-engine no-tests no-async no-apps
 
 ifndef CONFIG_OPENSSL_WITH_ASM
   OPENSSL_OPTIONS += no-asm
@@ -64,32 +64,42 @@ else
   OPENSSL_TARGET:=linux-generic32
 endif
 
-# ===== flags（保留你的原逻辑）=====
+# ===== flags（保留你原逻辑）=====
 TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
-# ===== ✅ 关键修复：隔离 OpenWrt 环境 =====
+# ===== ✅ 关键修复：彻底隔离宿主机环境 =====
 define Build/Configure
         (cd $(PKG_BUILD_DIR); \
         unset CROSS_COMPILE; \
         unset CFLAGS; \
         unset CPPFLAGS; \
         unset LDFLAGS; \
+        export CC="$(TARGET_CC)"; \
+        export AR="$(TARGET_AR)"; \
+        export RANLIB="$(TARGET_RANLIB)"; \
+        export CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include"; \
+        export CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include"; \
+        export LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib"; \
         ./Configure $(OPENSSL_TARGET) \
                 --prefix=/usr \
                 --openssldir=/etc/ssl-1.1 \
                 --libdir=lib \
                 --cross-compile-prefix="$(TARGET_CROSS)" \
+                no-stdio \
                 $(OPENSSL_OPTIONS) \
         )
 endef
 
-# ===== Compile（仅补齐工具链，防止隐性问题）=====
+# ===== Compile =====
 define Build/Compile
         $(MAKE) -C $(PKG_BUILD_DIR) \
                 CC="$(TARGET_CC)" \
                 AR="$(TARGET_AR)" \
                 RANLIB="$(TARGET_RANLIB)" \
+                CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include" \
+                CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include" \
+                LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib" \
                 $(PKG_JOBS)
 
         $(MAKE) -C $(PKG_BUILD_DIR) \
@@ -99,29 +109,25 @@ endef
 
 # ===== 开发文件（避免污染 OpenSSL 3）=====
 define Build/InstallDev
-        # 头文件隔离
         $(INSTALL_DIR) $(1)/usr/include/openssl1.1
         $(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(1)/usr/include/openssl1.1/
 
-        # 静态库
         $(INSTALL_DIR) $(1)/usr/lib
         $(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.a $(1)/usr/lib/
         $(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.a $(1)/usr/lib/
 
-        # 只放带版本号的动态库
         $(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
         $(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 endef
 
-# ===== 运行时安装（核心）=====
+# ===== 运行时安装 =====
 define Package/libopenssl1.1/install
         $(INSTALL_DIR) $(1)/usr/lib
 
-        # ✅ 只安装 1.1（不会覆盖 OpenSSL 3）
         $(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
         $(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 
-        # 🔥 防止污染系统
+        # 防止污染 OpenSSL 3
         rm -f $(1)/usr/lib/libcrypto.so
         rm -f $(1)/usr/lib/libssl.so
 endef
