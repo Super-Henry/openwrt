@@ -43,7 +43,7 @@ OpenSSL 1.1 shared libraries for legacy apps (coexists with OpenSSL 3)
 endef
 
 # ===== 构建选项 =====
-OPENSSL_OPTIONS:= shared no-engine no-tests no-async no-apps
+OPENSSL_OPTIONS:= shared no-engine no-tests no-async no-apps no-deprecated
 
 ifndef CONFIG_OPENSSL_WITH_ASM
   OPENSSL_OPTIONS += no-asm
