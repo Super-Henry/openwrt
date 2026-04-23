@@ -1,6 +1,5 @@
 #
 # Copyright (C) 2006-2016 OpenWrt.org
-# This is free software, licensed under the GNU General Public License v2.
 #
 
 include $(TOPDIR)/rules.mk
@@ -21,7 +20,6 @@ PKG_SOURCE_URL:= \
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
-# 强制使用正确的源码目录（覆盖默认的 openssl-1.1.1w）
 PKG_BUILD_DIR:=$(BUILD_DIR)/openssl-$(PKG_VERSION)
 
 PKG_LICENSE:=OpenSSL
@@ -43,53 +41,46 @@ OpenSSL 1.1 shared libraries for legacy apps (coexists with OpenSSL 3)
 endef
 
 # ===== 构建选项 =====
-OPENSSL_OPTIONS:= shared no-engine no-tests
+OPENSSL_OPTIONS:= shared no-engine no-tests no-async
 
 ifndef CONFIG_OPENSSL_WITH_ASM
   OPENSSL_OPTIONS += no-asm
 endif
 
-OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
+# ✅ 正确 target（关键修复）
+# OpenSSL 不支持 linux-mipsel-openwrt 这种写法
+ifeq ($(ARCH),mips)
+  OPENSSL_TARGET:=linux-mips32
+else ifeq ($(ARCH),aarch64)
+  OPENSSL_TARGET:=linux-aarch64
+else ifeq ($(ARCH),arm)
+  OPENSSL_TARGET:=linux-armv4
+else ifeq ($(ARCH),x86_64)
+  OPENSSL_TARGET:=linux-x86_64
+else
+  OPENSSL_TARGET:=linux-generic32
+endif
 
-# ===== 处理两级目录嵌套 =====
-# PKG_BUILD_DIR 已经指向 openssl-1.1.1w，这里定义二级目录的检测起点
-OPENSSL_SRC_DIR:=$(PKG_BUILD_DIR)
-
-define Build/Configure
-	@if [ -d "$(OPENSSL_SRC_DIR)/openssl-$(PKG_VERSION)" ]; then \
-		cd $(OPENSSL_SRC_DIR)/openssl-$(PKG_VERSION); \
-	elif [ -d "$(OPENSSL_SRC_DIR)" ]; then \
-		cd $(OPENSSL_SRC_DIR); \
-	else \
-		cd $(PKG_BUILD_DIR); \
-	fi; \
-	./Configure $(OPENSSL_TARGET) \
-		--prefix=/usr \
-		--libdir=lib \
-		--openssldir=/etc/ssl-1.1 \
-		--cross-compile-prefix="$(TARGET_CROSS)" \
-		$(TARGET_CFLAGS) \
-		$(TARGET_CPPFLAGS) \
-		$(TARGET_LDFLAGS) \
-		$(OPENSSL_OPTIONS)
-endef
-
+# 不要乱传 flags 给 Configure（这是你之前炸的核心原因）
 TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
+# ===== Configure =====
+define Build/Configure
+	(cd $(PKG_BUILD_DIR); \
+	./Configure $(OPENSSL_TARGET) \
+		--prefix=/usr \
+		--openssldir=/etc/ssl-1.1 \
+		--libdir=lib \
+		--cross-compile-prefix="$(TARGET_CROSS)" \
+		$(OPENSSL_OPTIONS) \
+	)
+endef
+
+# ===== Compile =====
 define Build/Compile
-	@if [ -d "$(OPENSSL_SRC_DIR)/openssl-$(PKG_VERSION)" ]; then \
-		SRC_DIR=$(OPENSSL_SRC_DIR)/openssl-$(PKG_VERSION); \
-	elif [ -d "$(OPENSSL_SRC_DIR)" ]; then \
-		SRC_DIR=$(OPENSSL_SRC_DIR); \
-	else \
-		SRC_DIR=$(PKG_BUILD_DIR); \
-	fi; \
-	+$(MAKE) $(PKG_JOBS) -C $$$$SRC_DIR \
-		CC="$(TARGET_CC)" \
-		all; \
-	$(MAKE) -C $$$$SRC_DIR \
-		CC="$(TARGET_CC)" \
+	$(MAKE) -C $(PKG_BUILD_DIR) $(PKG_JOBS)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install_sw install_ssldirs
 endef
@@ -100,7 +91,7 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/openssl1.1
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(1)/usr/include/openssl1.1/
 
-	# 静态库（可选）
+	# 静态库
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.a $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.a $(1)/usr/lib/
@@ -114,11 +105,11 @@ endef
 define Package/libopenssl1.1/install
 	$(INSTALL_DIR) $(1)/usr/lib
 
-	# ✅ 只安装 1.1 版本（不会覆盖 OpenSSL 3）
+	# ✅ 只安装 1.1（不会覆盖 OpenSSL 3）
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 
-	# 🔥 防止覆盖 OpenSSL 3（极其关键）
+	# 🔥 防止污染系统
 	rm -f $(1)/usr/lib/libcrypto.so
 	rm -f $(1)/usr/lib/libssl.so
 endef
