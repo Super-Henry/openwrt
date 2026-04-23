@@ -16,8 +16,8 @@ PKG_BUILD_PARALLEL:=1
 
 PKG_SOURCE:=openssl-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
-        https://openssl-library.org/source/old/$(PKG_BASE)/ \
-        https://www.openssl.org/source/old/$(PKG_BASE)/
+	https://openssl-library.org/source/old/$(PKG_BASE)/ \
+	https://www.openssl.org/source/old/$(PKG_BASE)/
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
@@ -70,62 +70,62 @@ TARGET_LDFLAGS += -Wl,--gc-sections
 
 # ===== ✅ 关键修复：彻底隔离宿主机环境 =====
 define Build/Configure
-        (cd $(PKG_BUILD_DIR); \
-        unset CROSS_COMPILE; \
-        unset CFLAGS; \
-        unset CPPFLAGS; \
-        unset LDFLAGS; \
-        export CC="$(TARGET_CC)"; \
-        export AR="$(TARGET_AR)"; \
-        export RANLIB="$(TARGET_RANLIB)"; \
-        export CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include"; \
-        export CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include"; \
-        export LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib"; \
-        ./Configure $(OPENSSL_TARGET) \
-                --prefix=/usr \
-                --openssldir=/etc/ssl-1.1 \
-                --libdir=lib \
-                --cross-compile-prefix="$(TARGET_CROSS)" \
-                no-stdio \
-                $(OPENSSL_OPTIONS) \
-        )
+	(cd $(PKG_BUILD_DIR); \
+	unset CROSS_COMPILE; \
+	unset CFLAGS; \
+	unset CPPFLAGS; \
+	unset LDFLAGS; \
+	export CC="$(TARGET_CC)"; \
+	export AR="$(TARGET_AR)"; \
+	export RANLIB="$(TARGET_RANLIB)"; \
+	export CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include"; \
+	export CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include"; \
+	export LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib"; \
+	./Configure $(OPENSSL_TARGET) \
+		--prefix=/usr \
+		--openssldir=/etc/ssl-1.1 \
+		--libdir=lib \
+		--cross-compile-prefix="$(TARGET_CROSS)" \
+		no-stdio \
+		$(OPENSSL_OPTIONS) \
+	)
 endef
 
 # ===== Compile =====
 define Build/Compile
-        $(MAKE) -C $(PKG_BUILD_DIR) \
-                CC="$(TARGET_CC)" \
-                AR="$(TARGET_AR)" \
-                RANLIB="$(TARGET_RANLIB)" \
-                CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include" \
-                CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include" \
-                LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib" \
-                $(PKG_JOBS)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		AR="$(TARGET_AR)" \
+		RANLIB="$(TARGET_RANLIB)" \
+		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib" \
+		$(PKG_JOBS)
 
-        $(MAKE) -C $(PKG_BUILD_DIR) \
-                DESTDIR="$(PKG_INSTALL_DIR)" \
-                install_sw install_ssldirs
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install_sw install_ssldirs
 endef
 
 # ===== 开发文件（避免污染 OpenSSL 3）=====
 define Build/InstallDev
-        $(INSTALL_DIR) $(1)/usr/include/openssl1.1
-        $(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(1)/usr/include/openssl1.1/
+	$(INSTALL_DIR) $(1)/usr/include/openssl1.1
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/openssl $(1)/usr/include/openssl1.1/
 
-        $(INSTALL_DIR) $(1)/usr/lib
-        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.a $(1)/usr/lib/
-        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.a $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.a $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.a $(1)/usr/lib/
 
-        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
-        $(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 endef
 
 # ===== 运行时安装 =====
 define Package/libopenssl1.1/install
-        $(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 
-        $(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
-        $(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libcrypto.so.1.1 $(1)/usr/lib/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libssl.so.1.1 $(1)/usr/lib/
 
         # 防止污染 OpenSSL 3
         rm -f $(1)/usr/lib/libcrypto.so
