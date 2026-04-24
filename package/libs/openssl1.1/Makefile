@@ -21,7 +21,6 @@ PKG_SOURCE_URL:= \
 
 PKG_HASH:=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
 
-# 强制使用正确的源码目录
 PKG_BUILD_DIR:=$(BUILD_DIR)/openssl-$(PKG_VERSION)
 
 PKG_LICENSE:=OpenSSL
@@ -43,12 +42,13 @@ OpenSSL 1.1 shared libraries for legacy apps (coexists with OpenSSL 3)
 endef
 
 # ===== 构建选项 =====
-# 已删除：no-apps（OpenSSL 1.1.1 不支持）
-OPENSSL_OPTIONS:= shared no-engine no-tests no-async no-deprecated
+# 强制禁用 asm，避免 MIPS16 汇编不兼容 以及 交叉编译 RANLIB 重复问题
+OPENSSL_OPTIONS:= shared no-engine no-tests no-async no-deprecated no-asm
 
-ifndef CONFIG_OPENSSL_WITH_ASM
-  OPENSSL_OPTIONS += no-asm
-endif
+# 原来的条件保留但不再使用（直接 no-asm）
+# ifndef CONFIG_OPENSSL_WITH_ASM
+#   OPENSSL_OPTIONS += no-asm
+# endif
 
 # ===== 正确 target（鲁班 mipsel / 哪吒 aarch64 适配）=====
 ifeq ($(ARCH),mips)
@@ -69,7 +69,7 @@ endif
 TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
-# ===== ✅ 关键修复：彻底隔离宿主机环境 =====
+# ===== 关键修复：彻底隔离宿主机环境，不设置 cross-compile-prefix =====
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 	unset CROSS_COMPILE; \
@@ -86,7 +86,6 @@ define Build/Configure
 		--prefix=/usr \
 		--openssldir=/etc/ssl-1.1 \
 		--libdir=lib \
-		--cross-compile-prefix="$(TARGET_CROSS)" \
 		no-stdio \
 		$(OPENSSL_OPTIONS) \
 	)
