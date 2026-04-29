@@ -86,7 +86,6 @@ define Build/Configure
 		--prefix=/usr \
 		--openssldir=/etc/ssl-1.1 \
 		--libdir=lib \
-		no-stdio \
 		$(OPENSSL_OPTIONS) \
 	)
 endef
