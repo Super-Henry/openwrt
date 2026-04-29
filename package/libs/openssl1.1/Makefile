@@ -43,7 +43,8 @@ endef
 
 # ===== 构建选项 =====
 # 强制禁用 asm，避免 MIPS16 汇编不兼容 以及 交叉编译 RANLIB 重复问题
-OPENSSL_OPTIONS:= shared no-engine no-tests no-async no-deprecated no-asm
+# 已去除 no-stdio 和 no-deprecated，确保兼容旧程序（如蒲公英）
+OPENSSL_OPTIONS:= shared no-engine no-tests no-async no-asm
 
 # 原来的条件保留但不再使用（直接 no-asm）
 # ifndef CONFIG_OPENSSL_WITH_ASM
