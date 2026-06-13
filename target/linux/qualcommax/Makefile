@@ -19,3 +19,10 @@ DEFAULT_PACKAGES += \
 	e2fsprogs kmod-fs-ext4 losetup
 
 $(eval $(call BuildTarget))
+
+# 新增批量安装循环，复刻ramips自动建目录逻辑
+install:
+	$(foreach sub,$(SUBTARGETS),
+		mkdir -p $(BIN_DIR)/qualcommax/$(sub)
+		$(MAKE) -C $(sub) install SUBTARGET=$(sub)
+	)
