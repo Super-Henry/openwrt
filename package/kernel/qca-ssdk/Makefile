@@ -43,7 +43,7 @@ MAKE_FLAGS+= \
 	ARCH=$(LINUX_KARCH) \
 	TARGET_SUFFIX=$(CONFIG_TARGET_SUFFIX) \
 	GCC_VERSION=$(GCC_VERSION) \
-	EXTRA_CFLAGS="-fno-stack-protector -I$(STAGING_DIR)/usr/include -Wno-error=enum-conversion -Wno-error=builtin-macro-redefined" \
+	EXTRA_CFLAGS="-fno-stack-protector -I$(STAGING_DIR)/usr/include -Wno-error" \
 	SoC=$(CONFIG_TARGET_SUBTARGET) \
 	SHELL="$(BASH)" \
 	PTP_FEATURE=disable SWCONFIG_FEATURE=disable \
