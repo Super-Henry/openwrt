@@ -32,8 +32,8 @@ endef
 
 GCC_VERSION=$(shell echo "$(CONFIG_GCC_VERSION)" | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 
-# 全局关闭所有警告转错误，优先级最高，兼容所有GCC版本
-LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS) KCFLAGS+=-Wno-error' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
+# 移除内核侧传参，改用EXTRA_CFLAGS全局控制，避免参数被截断丢失
+LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS)' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
 
 MAKE_FLAGS+= \
 	TARGET_NAME=$(CONFIG_TARGET_NAME) \
@@ -44,7 +44,8 @@ MAKE_FLAGS+= \
 	ARCH=$(LINUX_KARCH) \
 	TARGET_SUFFIX=$(CONFIG_TARGET_SUFFIX) \
 	GCC_VERSION=$(GCC_VERSION) \
-	EXTRA_CFLAGS="-fno-stack-protector -I$(STAGING_DIR)/usr/include" \
+	# 关键修复：全局关闭所有警告升级为错误，所有源码编译强制携带
+	EXTRA_CFLAGS="-fno-stack-protector -I$(STAGING_DIR)/usr/include -Wno-error" \
 	SoC=$(CONFIG_TARGET_SUBTARGET) \
 	SHELL="$(BASH)" \
 	PTP_FEATURE=disable SWCONFIG_FEATURE=disable \
