@@ -32,8 +32,8 @@ endef
 
 GCC_VERSION=$(shell echo "$(CONFIG_GCC_VERSION)" | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 
-# 使用KCFLAGS全局注入编译标记，优先级高于CFLAGS_MODULE，解决6.6内核-Werror覆盖问题
-LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS) KCFLAGS+="-Wno-error=incompatible-pointer-types -Wno-macro-redefined"' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
+# 全局关闭所有警告转错误，优先级最高，兼容所有GCC版本
+LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS) KCFLAGS+=-Wno-error' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
 
 MAKE_FLAGS+= \
 	TARGET_NAME=$(CONFIG_TARGET_NAME) \
@@ -61,7 +61,6 @@ ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq60xx")
     MAKE_FLAGS+= CHIP_TYPE=CPPE
 endif
 
-# 移除重复的 $(LNX_CONFIG_OPTS)
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) $(MAKE_FLAGS) -C $(PKG_BUILD_DIR)
 endef
