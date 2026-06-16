@@ -32,7 +32,8 @@ endef
 
 GCC_VERSION=$(shell echo "$(CONFIG_GCC_VERSION)" | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 
-LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS) CFLAGS_MODULE+=-Wno-error' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
+# 使用KCFLAGS全局注入编译标记，优先级高于CFLAGS_MODULE，解决6.6内核-Werror覆盖问题
+LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS) KCFLAGS+="-Wno-error=incompatible-pointer-types -Wno-macro-redefined"' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
 
 MAKE_FLAGS+= \
 	TARGET_NAME=$(CONFIG_TARGET_NAME) \
@@ -60,9 +61,9 @@ ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq60xx")
     MAKE_FLAGS+= CHIP_TYPE=CPPE
 endif
 
-
+# 移除重复的 $(LNX_CONFIG_OPTS)
 define Build/Compile
-	+$(MAKE) $(PKG_JOBS) $(MAKE_FLAGS) -C $(PKG_BUILD_DIR) $(LNX_CONFIG_OPTS)
+	+$(MAKE) $(PKG_JOBS) $(MAKE_FLAGS) -C $(PKG_BUILD_DIR)
 endef
 
 define Build/InstallDev
@@ -92,7 +93,6 @@ define Build/InstallDev
 	$(CP) -rf $(PKG_BUILD_DIR)/include/common/*.h $(1)/usr/include/qca-ssdk
 	$(CP) -rf $(PKG_BUILD_DIR)/include/sal/os/linux/*.h $(1)/usr/include/qca-ssdk
 	$(CP) -rf $(PKG_BUILD_DIR)/include/sal/os/*.h $(1)/usr/include/qca-ssdk
-
 endef
 
 $(eval $(call KernelPackage,qca-ssdk))
